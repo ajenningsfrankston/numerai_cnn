@@ -23,7 +23,9 @@ X = complete_training_data[features]
 Y = complete_training_data["target"]
 
 corr = X.corr()
-dist_matrix = abs(1-corr)
+dist_matrix = 1-abs(corr)
+
+print(dist_matrix)
 
 N = len(dist_matrix)
 

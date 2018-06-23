@@ -60,17 +60,13 @@ def compute_serial_matrix(dist_mat, method="ward"):
     return seriated_dist, res_order, res_linkage
 
 
-def sort_data(dist_matrix):
+def sort_data(dist_mat):
 
 # iris = datasets.load_iris()
 # iris.data.shape
 
 
-    N = len(dist_matrix)
-
-    X = dist_matrix[np.random.permutation(N),:]
-
-    dist_mat = squareform(pdist(X))
+    N = len(dist_mat)
 
     plt.pcolormesh(dist_mat)
     plt.xlim([0,N])
