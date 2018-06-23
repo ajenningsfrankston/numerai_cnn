@@ -60,34 +60,30 @@ def compute_serial_matrix(dist_mat, method="ward"):
     return seriated_dist, res_order, res_linkage
 
 
-iris = datasets.load_iris()
-iris.data.shape
+def sort_data(dist_matrix):
 
-dist_mat = squareform(pdist(iris.data))
+# iris = datasets.load_iris()
+# iris.data.shape
 
-N = len(iris.data)
-plt.pcolormesh(dist_mat)
-plt.colorbar()
-plt.xlim([0,N])
-plt.ylim([0,N])
-plt.show()
 
-X = iris.data[np.random.permutation(N),:]
+    N = len(dist_matrix)
 
-dist_mat = squareform(pdist(X))
+    X = dist_matrix[np.random.permutation(N),:]
 
-plt.pcolormesh(dist_mat)
-plt.xlim([0,N])
-plt.ylim([0,N])
-plt.show()
+    dist_mat = squareform(pdist(X))
 
-methods = ["ward", "single", "average", "complete"]
-for method in methods:
-    print("Method:\t", method)
-
-    ordered_dist_mat, res_order, res_linkage = compute_serial_matrix(dist_mat, method)
-
-    plt.pcolormesh(ordered_dist_mat)
-    plt.xlim([0, N])
-    plt.ylim([0, N])
+    plt.pcolormesh(dist_mat)
+    plt.xlim([0,N])
+    plt.ylim([0,N])
     plt.show()
+
+    methods = ["ward", "single", "average", "complete"]
+    for method in methods:
+        print("Method:\t", method)
+
+        ordered_dist_mat, res_order, res_linkage = compute_serial_matrix(dist_mat, method)
+
+        plt.pcolormesh(ordered_dist_mat)
+        plt.xlim([0, N])
+        plt.ylim([0, N])
+        plt.show()

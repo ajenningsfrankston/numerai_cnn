@@ -7,8 +7,10 @@
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from check_consistency import check_consistency
+from re_order_features import sort_data
 
 training_data = pd.read_csv('~/numerai_datasets/numerai_training_data.csv', header=0)
 tournament_data = pd.read_csv('~/numerai_datasets/numerai_tournament_data.csv', header=0)
@@ -20,8 +22,16 @@ features = [f for f in list(complete_training_data) if "feature" in f]
 X = complete_training_data[features]
 Y = complete_training_data["target"]
 
+corr = X.corr()
+dist_matrix = abs(1-corr)
+
+N = len(dist_matrix)
 
 
+plt.pcolormesh(dist_matrix)
+plt.xlim([0,N])
+plt.ylim([0,N])
+plt.show()
 
 # xxx take out sys when re-ordering is working
 import sys
