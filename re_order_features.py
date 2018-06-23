@@ -57,7 +57,7 @@ def compute_serial_matrix(dist_mat, method="ward"):
     seriated_dist[a, b] = dist_mat[[res_order[i] for i in a], [res_order[j] for j in b]]
     seriated_dist[b, a] = seriated_dist[a, b]
 
-    return seriated_dist, res_order, res_linkage
+    return  seriated_dist,res_order
 
 
 def sort_data(dist_mat):
@@ -77,9 +77,11 @@ def sort_data(dist_mat):
     for method in methods:
         print("Method:\t", method)
 
-        ordered_dist_mat, res_order, res_linkage = compute_serial_matrix(dist_mat, method)
+        ordered_dist_mat,res_order = compute_serial_matrix(dist_mat, method)
 
         plt.pcolormesh(ordered_dist_mat)
         plt.xlim([0, N])
         plt.ylim([0, N])
         plt.show()
+
+    return res_order
