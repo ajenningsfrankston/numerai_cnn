@@ -62,24 +62,13 @@ def compute_serial_matrix(dist_mat, method="ward"):
 
 def sort_features(dist_mat,method):
 
-# iris = datasets.load_iris()
-# iris.data.shape
-
+    ordered_dist_mat,res_order = compute_serial_matrix(dist_mat, method)
 
     N = len(dist_mat)
 
-    plt.pcolormesh(dist_mat)
-    plt.xlim([0,N])
-    plt.ylim([0,N])
-    plt.show()
-
-
-
-    ordered_dist_mat,res_order = compute_serial_matrix(dist_mat, method)
-
-    plt.pcolormesh(ordered_dist_mat)
-    plt.xlim([0, N])
-    plt.ylim([0, N])
-    plt.show()
+ #   plt.pcolormesh(ordered_dist_mat)
+ #   plt.xlim([0, N])
+ #   plt.ylim([0, N])
+ #   plt.show()
 
     return res_order
