@@ -60,7 +60,7 @@ def compute_serial_matrix(dist_mat, method="ward"):
     return  seriated_dist,res_order
 
 
-def sort_features(dist_mat):
+def sort_features(dist_mat,method):
 
 # iris = datasets.load_iris()
 # iris.data.shape
@@ -73,15 +73,13 @@ def sort_features(dist_mat):
     plt.ylim([0,N])
     plt.show()
 
-    methods = ["ward", "single", "average", "complete"]
-    for method in methods:
-        print("Method:\t", method)
 
-        ordered_dist_mat,res_order = compute_serial_matrix(dist_mat, method)
 
-        plt.pcolormesh(ordered_dist_mat)
-        plt.xlim([0, N])
-        plt.ylim([0, N])
-        plt.show()
+    ordered_dist_mat,res_order = compute_serial_matrix(dist_mat, method)
+
+    plt.pcolormesh(ordered_dist_mat)
+    plt.xlim([0, N])
+    plt.ylim([0, N])
+    plt.show()
 
     return res_order

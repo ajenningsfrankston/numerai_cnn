@@ -30,12 +30,8 @@ dist_matrix = 1-abs(corr)
 N = len(dist_matrix)
 
 
-plt.pcolormesh(dist_matrix)
-plt.xlim([0,N])
-plt.ylim([0,N])
-plt.show()
 
-new_order = sort_features(dist_matrix.values)
+new_order = sort_features(dist_matrix.values,method="ward")
 
 print(new_order)
 
