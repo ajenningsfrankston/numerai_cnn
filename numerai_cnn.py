@@ -30,12 +30,17 @@ dist_matrix = 1-abs(corr)
 N = len(dist_matrix)
 
 
-
 new_order = sort_features(dist_matrix.values,method="ward")
 
 print(new_order)
 
-# xxx take out sys when re-ordering is working
+#print(new_order)
+
+X = X[[new_order]]
+Y = Y[[new_order]]
+validation_data = validation_data[[new_order]]
+
+
 import sys
 sys.exit()
 
