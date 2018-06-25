@@ -60,7 +60,7 @@ def compute_serial_matrix(dist_mat, method="ward"):
     return  seriated_dist,res_order
 
 
-def sort_data(dist_mat):
+def sort_features(dist_mat):
 
 # iris = datasets.load_iris()
 # iris.data.shape
