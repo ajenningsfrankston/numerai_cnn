@@ -61,18 +61,14 @@ def create_model(neurons=50, dropout=0.2):
     model = Sequential()
 
     # we add a Convolution1D, which will learn filters
-
-    model.add(Conv1D(filters,
-                     kernel_size,
-                     padding='valid',
-                     activation='relu',
-                     strides=1))
+    model.add(Conv1D(filters, kernel_size,input_shape=(50,), padding='valid', activation='relu',strides=1))
 
     # we use max pooling:
     model.add(GlobalMaxPooling1D())
 
-    # We add a vanilla hidden layer:
+    # we add a vanilla hidden layer:
     model.add(Dense(neurons))
+
     model.add(Dropout(0.2))
     model.add(Activation('relu'))
     model.add(BatchNormalization())
