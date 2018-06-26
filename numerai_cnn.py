@@ -40,7 +40,6 @@ X = X.reindex(columns=new_columns)
 validation_data = validation_data.reindex(columns=new_columns)
 
 
-
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import GroupKFold
 
@@ -48,11 +47,34 @@ from sklearn.model_selection import GroupKFold
 from keras.models import Sequential
 from keras.layers import Dense, BatchNormalization, Dropout, Activation
 from keras.wrappers.scikit_learn import KerasClassifier
+from keras.layers import Conv1D, GlobalMaxPooling1D
+
+# set parameters:
+
+batch_size = 32
+filters = 50
+kernel_size = 3
+epochs = 8
 
 
-def create_model(neurons=200, dropout=0.2):
+def create_model(neurons=50, dropout=0.2):
     model = Sequential()
-    model.add(Dense(neurons, input_shape=(50,), kernel_initializer='glorot_uniform', use_bias=False))
+
+    # we add a Convolution1D, which will learn filters
+
+    model.add(Conv1D(filters,
+                     kernel_size,
+                     padding='valid',
+                     activation='relu',
+                     strides=1))
+
+    # we use max pooling:
+    model.add(GlobalMaxPooling1D())
+
+    # We add a vanilla hidden layer:
+    model.add(Dense(neurons))
+    model.add(Dropout(0.2))
+    model.add(Activation('relu'))
     model.add(BatchNormalization())
     model.add(Dropout(dropout))
     model.add(Activation('relu'))
@@ -60,7 +82,7 @@ def create_model(neurons=200, dropout=0.2):
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['binary_crossentropy', 'accuracy'])
     return model
 
-model = KerasClassifier(build_fn=create_model, epochs=8, batch_size=128, verbose=0)
+model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
 
 neurons = [16, 32]
 dropout = [0.1, 0.3]
