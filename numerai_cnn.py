@@ -31,18 +31,14 @@ N = len(dist_matrix)
 
 
 new_order = sort_features(dist_matrix.values,method="ward")
-
-print(new_order)
-
-#print(new_order)
-
-X = X[[new_order]]
-Y = Y[[new_order]]
-validation_data = validation_data[[new_order]]
+new_order = list(1 + x for x in new_order)
+new_columns = list(map(str,new_order))
+new_columns = list('feature' + no for no in new_columns)
 
 
-import sys
-sys.exit()
+X = X.reindex(columns=new_columns)
+validation_data = validation_data.reindex(columns=new_columns)
+
 
 
 from sklearn.model_selection import GridSearchCV
