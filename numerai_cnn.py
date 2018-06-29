@@ -59,26 +59,29 @@ epochs = 8
 
 def create_model(neurons=50, dropout=0.2):
     model = Sequential()
-
-    # we add a Convolution1D, which will learn filters
-    model.add(Conv1D(filters, kernel_size,input_shape=(50,), padding='valid', activation='relu',strides=1))
-
-    # we use max pooling:
-    model.add(GlobalMaxPooling1D())
-
     # we add a vanilla hidden layer:
     model.add(Dense(neurons))
-
+    model.add(Activation('sigmoid'))
     model.add(Dropout(0.2))
-    model.add(Activation('relu'))
-    model.add(BatchNormalization())
+
+    model.add(Dense(neurons))
+    model.add(Activation('sigmoid'))
     model.add(Dropout(dropout))
-    model.add(Activation('relu'))
     model.add(Dense(1, activation='sigmoid', kernel_initializer='glorot_normal'))
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['binary_crossentropy', 'accuracy'])
     return model
 
 model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
+
+#try single training instance
+
+history = model.fit(X.values,Y.values,batch_size=batch_size,epochs=epochs,verbose=1)
+
+import sys
+sys.exit()
+
+
+
 
 neurons = [16, 32]
 dropout = [0.1, 0.3]
