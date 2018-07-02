@@ -22,23 +22,6 @@ features = [f for f in list(complete_training_data) if "feature" in f]
 X = complete_training_data[features]
 Y = complete_training_data["target"]
 
-corr = X.corr()
-dist_matrix = 1-abs(corr)
-
-#print(dist_matrix)
-
-N = len(dist_matrix)
-
-
-new_order = sort_features(dist_matrix.values,method="ward")
-new_order = list(1 + x for x in new_order)
-new_columns = list(map(str,new_order))
-new_columns = list('feature' + no for no in new_columns)
-
-
-X = X.reindex(columns=new_columns)
-validation_data = validation_data.reindex(columns=new_columns)
-
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import GroupKFold
@@ -72,15 +55,6 @@ def create_model(neurons=50, dropout=0.2):
     return model
 
 model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
-
-#try single training instance
-
-history = model.fit(X.values,Y.values,batch_size=batch_size,epochs=epochs,verbose=1)
-
-import sys
-sys.exit()
-
-
 
 
 neurons = [16, 32]
