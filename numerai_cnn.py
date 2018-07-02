@@ -45,9 +45,8 @@ def create_model(neurons=50, dropout=0.2):
     # we add a vanilla hidden layer:
     model.add(Dense(neurons))
     model.add(Activation('sigmoid'))
-    model.add(Dense(neurons))
-    model.add(Activation('sigmoid'))
-    model.add(Dropout(0.1))
+    model.add(Dropout(0.2))
+
     model.add(Dense(neurons))
     model.add(Activation('sigmoid'))
     model.add(Dropout(dropout))
@@ -55,8 +54,8 @@ def create_model(neurons=50, dropout=0.2):
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['binary_crossentropy', 'accuracy'])
     return model
 
-
 model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
+
 
 neurons = [16, 32]
 dropout = [0.1, 0.3]
