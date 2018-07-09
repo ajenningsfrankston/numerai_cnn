@@ -10,21 +10,37 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from check_consistency import check_consistency
-from re_order_features import sort_features
 
-training_data = pd.read_csv('~/numerai_datasets/numerai_training_data.csv', header=0)
-tournament_data = pd.read_csv('~/numerai_datasets/numerai_tournament_data.csv', header=0)
 
-validation_data = tournament_data[tournament_data.data_type=='validation']
-complete_training_data = training_data
+print("# Loading data...")
+# The training data is used to train your model how to predict the targets.
+train = pd.read_csv('~/numerai_datasets/numerai_training_data.csv', header=0)
+# The tournament data is the data that Numerai uses to evaluate your model.
+tournament = pd.read_csv('~/numerai_datasets/numerai_tournament_data.csv', header=0)
 
-features = [f for f in list(complete_training_data) if "feature" in f]
-X = complete_training_data[features]
-Y = complete_training_data["target"]
+# The tournament data contains validation data, test data and live data.
+# Validation is used to test your model locally so we separate that.
+validation = tournament[tournament['data_type']=='validation']
 
+# There are five targets in the training data which you can choose to model using the features.
+# Numerai does not say what the features mean but that's fine; we can still build a model.
+# Here we select the bernie_target.
+train_bernie = train.drop([
+    'id', 'era', 'data_type',
+    'target_charles', 'target_elizabeth',
+    'target_jordan', 'target_ken'], axis=1)
+
+# Transform the loaded CSV data into numpy arrays
+features = [f for f in list(train_bernie) if "feature" in f]
+X = train_bernie[features]
+Y = train_bernie['target_bernie']
+x_prediction = validation[features]
+ids = tournament['id']
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import GroupKFold
+from sklearn.metrics import log_loss
+
 
 
 from keras.models import Sequential
@@ -62,7 +78,7 @@ dropout = [0.1, 0.3]
 param_grid = dict(neurons=neurons, dropout=dropout)
 
 gkf = GroupKFold(n_splits=5)
-kfold_split = gkf.split(X, Y, groups=complete_training_data.era)
+kfold_split = gkf.split(X, Y, groups=train.era)
 
 grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=kfold_split, scoring='neg_log_loss',n_jobs=1, verbose=3)
 grid_result = grid.fit(X.values, Y.values)
@@ -76,21 +92,53 @@ for mean, stdev, param in zip(means, stds, params):
 
 # check consistency
 
-check_consistency(grid.best_estimator_.model, validation_data,complete_training_data)
+check_consistency(grid.best_estimator_.model, validation,train)
 
 # create predictions
 from time import strftime,gmtime
 
-x_prediction = tournament_data[features]
-t_id = tournament_data["id"]
-y_prediction = grid.best_estimator_.model.predict_proba(x_prediction.values, batch_size=128)
-results = np.reshape(y_prediction,-1)
+print("# Predicting...")
+# Based on the model we can predict the probability of each row being
+# a bernie_target in the validation data.
+# The model returns two columns: [probability of 0, probability of 1]
+# We are just interested in the probability that the target is 1.
+y_prediction = model.predict_proba(x_prediction)
+probabilities = y_prediction[:, 1]
+print("- probabilities:", probabilities[1:6])
+
+# We can see the probability does seem to be good at predicting the
+# true target correctly.
+print("- target:", validation['target_bernie'][1:6])
+print("- rounded probability:", [round(p) for p in probabilities][1:6])
+
+# But overall the accuracy is very low.
+correct = [round(x)==y for (x,y) in zip(probabilities, validation['target_bernie'])]
+print("- accuracy: ", sum(correct)/float(validation.shape[0]))
+
+# The targets for each of the tournaments are very correlated.
+tournament_corr = np.corrcoef(validation['target_bernie'], validation['target_elizabeth'])
+print("- bernie vs elizabeth corr:", tournament_corr)
+# You can see that target_elizabeth is accurate using the bernie model as well.
+correct = [round(x)==y for (x,y) in zip(probabilities, validation['target_elizabeth'])]
+print("- elizabeth using bernie:", sum(correct)/float(validation.shape[0]))
+
+# Numerai measures models on logloss instead of accuracy. The lower the logloss the better.
+# Numerai only pays models with logloss < 0.693 on the live portion of the tournament data.
+# Our validation logloss isn't very good.
+print("- validation logloss:", log_loss(validation['target_bernie'], probabilities))
+
+# To submit predictions from your model to Numerai, predict on the entire tournament data.
+x_prediction = tournament[features]
+y_prediction = model.predict_proba(x_prediction)
+results = y_prediction[:, 1]
+
+print("# Creating submission...")
+# Create your submission
 results_df = pd.DataFrame(data={'probability':results})
-joined = pd.DataFrame(t_id).join(results_df)
-# path = "predictions_w_loss_0_" + '{:4.0f}'.format(history.history['loss'][-1]*10000) + ".csv"
-filename = 'predictions_{:}'.format(strftime("%Y-%m-%d_%Hh%Mm%Ss", gmtime())) + '.csv'
-path = '~/numerai_predictions/' +filename
-print()
-print("Writing predictions to " + path.strip())
-# # Save the predictions out to a CSV file
-joined.to_csv(path,float_format='%.15f', index=False)
+joined = pd.DataFrame(ids).join(results_df)
+print("- joined:", joined.head())
+
+print("# Writing predictions to bernie_submissions.csv...")
+# Save the predictions out to a CSV file.
+joined.to_csv("../numerai_predictions/bernie_submission.csv", index=False)
+# Now you can upload these predictions on https://numer.ai
