@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 
 from check_consistency import check_consistency
 
-
 print("# Loading data...")
 # The training data is used to train your model how to predict the targets.
 train = pd.read_csv('~/numerai_datasets/numerai_training_data.csv', header=0)
