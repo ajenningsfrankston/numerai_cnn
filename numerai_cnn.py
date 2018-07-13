@@ -50,9 +50,7 @@ from keras.layers import Conv1D, GlobalMaxPooling1D
 # set parameters:
 
 batch_size = 32
-filters = 50
-kernel_size = 3
-epochs = 8
+epochs=8
 
 
 def create_model(neurons=50, dropout=0.2):
@@ -60,11 +58,11 @@ def create_model(neurons=50, dropout=0.2):
     # we add a vanilla hidden layer:
     model.add(Dense(neurons))
     model.add(Activation('sigmoid'))
-    model.add(Dropout(0.2))
-
+    model.add(Dropout(0.1))
     model.add(Dense(neurons))
     model.add(Activation('sigmoid'))
     model.add(Dropout(dropout))
+
     model.add(Dense(1, activation='sigmoid', kernel_initializer='glorot_normal'))
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['binary_crossentropy', 'accuracy'])
     return model
@@ -72,14 +70,14 @@ def create_model(neurons=50, dropout=0.2):
 model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
 
 
-neurons = [16, 32]
-dropout = [0.1, 0.3]
+neurons = [32, 40]
+dropout = [0.1, 0.2]
 param_grid = dict(neurons=neurons, dropout=dropout)
 
 gkf = GroupKFold(n_splits=5)
 kfold_split = gkf.split(X, Y, groups=train.era)
 
-grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=kfold_split, scoring='neg_log_loss',n_jobs=1, verbose=3)
+grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=kfold_split, scoring='neg_log_loss',n_jobs=4, verbose=3)
 grid_result = grid.fit(X.values, Y.values)
 
 print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
@@ -96,48 +94,16 @@ check_consistency(grid.best_estimator_.model, validation,train)
 # create predictions
 from time import strftime,gmtime
 
-print("# Predicting...")
-# Based on the model we can predict the probability of each row being
-# a bernie_target in the validation data.
-# The model returns two columns: [probability of 0, probability of 1]
-# We are just interested in the probability that the target is 1.
-y_prediction = model.predict_proba(x_prediction)
-probabilities = y_prediction[:, 1]
-print("- probabilities:", probabilities[1:6])
-
-# We can see the probability does seem to be good at predicting the
-# true target correctly.
-print("- target:", validation['target_bernie'][1:6])
-print("- rounded probability:", [round(p) for p in probabilities][1:6])
-
-# But overall the accuracy is very low.
-correct = [round(x)==y for (x,y) in zip(probabilities, validation['target_bernie'])]
-print("- accuracy: ", sum(correct)/float(validation.shape[0]))
-
-# The targets for each of the tournaments are very correlated.
-tournament_corr = np.corrcoef(validation['target_bernie'], validation['target_elizabeth'])
-print("- bernie vs elizabeth corr:", tournament_corr)
-# You can see that target_elizabeth is accurate using the bernie model as well.
-correct = [round(x)==y for (x,y) in zip(probabilities, validation['target_elizabeth'])]
-print("- elizabeth using bernie:", sum(correct)/float(validation.shape[0]))
-
-# Numerai measures models on logloss instead of accuracy. The lower the logloss the better.
-# Numerai only pays models with logloss < 0.693 on the live portion of the tournament data.
-# Our validation logloss isn't very good.
-print("- validation logloss:", log_loss(validation['target_bernie'], probabilities))
-
-# To submit predictions from your model to Numerai, predict on the entire tournament data.
 x_prediction = tournament[features]
-y_prediction = model.predict_proba(x_prediction)
-results = y_prediction[:, 1]
+t_id = tournament["id"]
+y_prediction = grid.best_estimator_.model.predict_proba(x_prediction.values, batch_size=batch_size)
+results = np.reshape(y_prediction,-1)
+results_df = pd.DataFrame(data={'probability_bernie':results})
+joined = pd.DataFrame(t_id).join(results_df)
 
-print("# Creating submission...")
-# Create your submission
-results_df = pd.DataFrame(data={'probability':results})
-joined = pd.DataFrame(ids).join(results_df)
-print("- joined:", joined.head())
-
-print("# Writing predictions to bernie_submissions.csv...")
-# Save the predictions out to a CSV file.
-joined.to_csv("../numerai_predictions/bernie_submission.csv", index=False)
-# Now you can upload these predictions on https://numer.ai
+filename = 'predictions.csv'
+path = '~/numerai_predictions/' + filename
+print()
+print("Writing predictions to " + path.strip())
+# # Save the predictions out to a CSV file
+joined.to_csv(path,float_format='%.5f', index=False)
