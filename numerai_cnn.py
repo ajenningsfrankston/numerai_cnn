@@ -16,7 +16,7 @@ from keras.models import Sequential
 from keras.layers import Dense, BatchNormalization, Dropout, Activation
 from keras.wrappers.scikit_learn import KerasClassifier
 
-
+from sklearn.preprocessing import PolynomialFeatures
 
 
 from check_consistency import check_consistency
@@ -46,7 +46,11 @@ Y = train_bernie['target_bernie']
 x_prediction = validation[features]
 ids = tournament['id']
 
+# include product features
+poly = PolynomialFeatures(2,interaction_only=True)
+poly.fit_transform(X)
 
+# xxx sanity check on X
 
 # set parameters:
 
@@ -93,7 +97,7 @@ for mean, stdev, param in zip(means, stds, params):
 check_consistency(grid.best_estimator_.model, validation,train)
 
 # create predictions
-from time import strftime,gmtime
+
 
 x_prediction = tournament[features]
 t_id = tournament["id"]
