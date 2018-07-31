@@ -9,6 +9,16 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GroupKFold
+
+from keras.models import Sequential
+from keras.layers import Dense, BatchNormalization, Dropout, Activation
+from keras.wrappers.scikit_learn import KerasClassifier
+
+
+
+
 from check_consistency import check_consistency
 
 print("# Loading data...")
@@ -36,21 +46,12 @@ Y = train_bernie['target_bernie']
 x_prediction = validation[features]
 ids = tournament['id']
 
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import GroupKFold
-from sklearn.metrics import log_loss
 
-
-
-from keras.models import Sequential
-from keras.layers import Dense, BatchNormalization, Dropout, Activation
-from keras.wrappers.scikit_learn import KerasClassifier
-from keras.layers import Conv1D, GlobalMaxPooling1D
 
 # set parameters:
 
-batch_size = 32
-epochs=8
+batch_size = 256
+epochs = 8
 
 
 def create_model(neurons=50, dropout=0.2):
