@@ -46,11 +46,34 @@ Y = train_bernie['target_bernie']
 x_prediction = validation[features]
 ids = tournament['id']
 
+print("# transforming features")
+
 # include product features
 poly = PolynomialFeatures(2,interaction_only=True)
-poly.fit_transform(X)
+Xt = poly.fit_transform(X)
 
-# xxx sanity check on X
+print(Xt.shape)
+
+from sklearn.linear_model import Ridge
+import sys
+
+clf = Ridge(alpha=1.0)
+clf.fit(Xt, Y)
+
+from sklearn.feature_selection import SelectFromModel
+
+sfm = SelectFromModel(clf, threshold=0.20)
+
+sfm.fit(Xt,Y)
+
+sf = sfm.get_support(indices=True)
+
+print(sf.shape)
+
+sys.exit()
+
+# xxx try ridge model followed by feature significance filter
+
 
 # set parameters:
 
