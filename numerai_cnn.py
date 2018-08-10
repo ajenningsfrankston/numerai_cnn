@@ -17,6 +17,10 @@ from keras.layers import Dense, BatchNormalization, Dropout, Activation
 from keras.wrappers.scikit_learn import KerasClassifier
 
 from sklearn.preprocessing import PolynomialFeatures
+from sklearn.feature_selection import SelectFromModel
+
+from sklearn.linear_model import Ridge
+import sys
 
 
 from check_consistency import check_consistency
@@ -54,21 +58,20 @@ Xt = poly.fit_transform(X)
 
 print(Xt.shape)
 
-from sklearn.linear_model import Ridge
-import sys
+print("# ridge regression")
 
 clf = Ridge(alpha=1.0)
 clf.fit(Xt, Y)
 
-from sklearn.feature_selection import SelectFromModel
-
-sfm = SelectFromModel(clf, threshold=0.20)
+sfm = SelectFromModel(clf, threshold=0.30)
 
 sfm.fit(Xt,Y)
 
 sf = sfm.get_support(indices=True)
 
-print(sf.shape)
+sf = sf.flatten('F')
+
+Xtt = Xt[:,sf]
 
 sys.exit()
 
@@ -95,8 +98,8 @@ def create_model(neurons=50, dropout=0.2):
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['binary_crossentropy', 'accuracy'])
     return model
 
-model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
 
+model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
 
 neurons = [32, 40]
 dropout = [0.1, 0.2]
