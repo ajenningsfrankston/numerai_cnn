@@ -16,11 +16,7 @@ from keras.models import Sequential
 from keras.layers import Dense, BatchNormalization, Dropout, Activation
 from keras.wrappers.scikit_learn import KerasClassifier
 
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.feature_selection import SelectFromModel
 
-from sklearn.linear_model import Ridge
-import sys
 
 
 from check_consistency import check_consistency
@@ -50,25 +46,6 @@ Y = train_bernie['target_bernie']
 x_prediction = validation[features]
 ids = tournament['id']
 
-print("# transforming features")
-
-# include product features
-poly = PolynomialFeatures(2,interaction_only=True)
-X = poly.fit_transform(X)
-
-print("# ridge regression")
-
-clf = Ridge(alpha=1.0)
-clf.fit(X, Y)
-sfm = SelectFromModel(clf, threshold=0.20)
-sfm.fit(X,Y)
-sf = sfm.get_support(indices=True)
-sf = sf.flatten('F')
-
-X = X[:,sf]
-
-
-# ridge model followed by feature significance filter
 
 
 # set parameters:
@@ -87,15 +64,14 @@ def create_model(neurons=50, dropout=0.2):
     model.add(Activation('sigmoid'))
     model.add(Dropout(dropout))
 
-
     model.add(Dense(1, activation='sigmoid', kernel_initializer='glorot_normal'))
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['binary_crossentropy', 'accuracy'])
     return model
 
-
 model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
 
-neurons = [64, 100]
+
+neurons = [32, 40]
 dropout = [0.1, 0.2]
 param_grid = dict(neurons=neurons, dropout=dropout)
 
@@ -103,7 +79,7 @@ gkf = GroupKFold(n_splits=5)
 kfold_split = gkf.split(X, Y, groups=train.era)
 
 grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=kfold_split, scoring='neg_log_loss',n_jobs=4, verbose=3)
-grid_result = grid.fit(X, Y)
+grid_result = grid.fit(X.values, Y.values)
 
 print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
 means = grid_result.cv_results_['mean_test_score']
@@ -114,16 +90,14 @@ for mean, stdev, param in zip(means, stds, params):
 
 # check consistency
 
-check_consistency(grid.best_estimator_.model, validation,train,poly,sf)
+check_consistency(grid.best_estimator_.model, validation,train)
 
 # create predictions
-
+from time import strftime,gmtime
 
 x_prediction = tournament[features]
-x_prediction = poly.fit_transform(x_prediction)
-x_prediction = x_prediction[:,sf]
 t_id = tournament["id"]
-y_prediction = grid.best_estimator_.model.predict_proba(x_prediction, batch_size=batch_size)
+y_prediction = grid.best_estimator_.model.predict_proba(x_prediction.values, batch_size=batch_size)
 results = np.reshape(y_prediction,-1)
 results_df = pd.DataFrame(data={'probability_bernie':results})
 joined = pd.DataFrame(t_id).join(results_df)
