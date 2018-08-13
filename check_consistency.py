@@ -1,4 +1,6 @@
 import numpy as np
+from sklearn.metrics import accuracy_score
+
 
 def check_consistency(model,valid_data,train_data):
     eras = valid_data.era.unique()
@@ -8,15 +10,16 @@ def check_consistency(model,valid_data,train_data):
         count += 1
         current_valid_data = valid_data[valid_data.era == era]
         features = [f for f in list(train_data) if "feature" in f]
-        X_valid = current_valid_data[features]
-        Y_valid = current_valid_data["target_bernie"]
-        loss = model.evaluate(X_valid.values, Y_valid.values, batch_size=128, verbose=0)[0]
-        if (loss < -np.log(.5)):
+        x_valid = current_valid_data[features]
+        y_valid = current_valid_data["target_bernie"]
+        predn = model.predict(x_valid.values)
+        accuracy = accuracy_score(y_valid.values,predn)
+        if accuracy > 0.5 :
             consistent = True
             count_consistent += 1
         else:
             consistent = False
-        print("{}: loss - {} consistent: {}".format(era, loss, consistent))
+        print("{}: accuracy - {} consistent: {}".format(era, accuracy, consistent))
     print("Consistency: {}".format(count_consistent / count))
 
 
