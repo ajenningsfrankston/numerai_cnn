@@ -16,9 +16,6 @@ from keras.models import Sequential
 from keras.layers import Dense, BatchNormalization, Dropout, Activation
 from keras.wrappers.scikit_learn import KerasClassifier
 
-
-
-
 from check_consistency import check_consistency
 
 print("# Loading data...")
@@ -40,6 +37,7 @@ train_bernie = train.drop([
     'target_jordan', 'target_ken'], axis=1)
 
 # Transform the loaded CSV data into numpy arrays
+
 features = [f for f in list(train_bernie) if "feature" in f]
 X = train_bernie[features]
 Y = train_bernie['target_bernie']
@@ -47,6 +45,26 @@ x_prediction = validation[features]
 ids = tournament['id']
 
 # explore stacking
+
+from sklearn.linear_model import RidgeClassifier
+from sklearn.metrics import accuracy_score
+
+clf = RidgeClassifier(alpha=0.02)
+
+clf.fit(X.values,Y.values)
+pred = clf.predict(X.values)
+accuracy = accuracy_score(pred,Y.values)
+
+pred2 = clf.predict(x_prediction)
+y2 = validation['target_bernie']
+accuracy = accuracy_score(pred2,y2)
+
+print(accuracy)
+
+check_consistency(clf, validation,train)
+
+import sys
+exit(-1)
 
 # set parameters:
 
@@ -59,7 +77,7 @@ def create_model(neurons=50, dropout=0.2):
     # we add a vanilla hidden layer:
     model.add(Dense(neurons))
     model.add(Activation('sigmoid'))
-    model.add(Dropout(0.1))
+    model.add(Dropout(dropout))
     model.add(Dense(neurons))
     model.add(Activation('sigmoid'))
     model.add(Dropout(dropout))
@@ -67,6 +85,7 @@ def create_model(neurons=50, dropout=0.2):
     model.add(Dense(1, activation='sigmoid', kernel_initializer='glorot_normal'))
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['binary_crossentropy', 'accuracy'])
     return model
+
 
 model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
 
@@ -82,11 +101,7 @@ grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=kfold_split, scor
 grid_result = grid.fit(X.values, Y.values)
 
 print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
-means = grid_result.cv_results_['mean_test_score']
-stds = grid_result.cv_results_['std_test_score']
-params = grid_result.cv_results_['params']
-for mean, stdev, param in zip(means, stds, params):
-    print("%f (%f) with: %r" % (mean, stdev, param))
+
 
 # check consistency
 
