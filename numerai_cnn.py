@@ -46,10 +46,12 @@ ids = tournament['id']
 
 # explore stacking
 
+print("# ridge regression ")
+
 from sklearn.linear_model import RidgeClassifier
 from sklearn.metrics import accuracy_score
 
-clf = RidgeClassifier(alpha=0.02)
+clf = RidgeClassifier(alpha=1.0)
 
 clf.fit(X.values,Y.values)
 pred = clf.predict(X.values)
@@ -62,6 +64,17 @@ accuracy = accuracy_score(pred2,y2)
 print(accuracy)
 
 check_consistency(clf, validation,train)
+
+# knn
+
+print("# Naive Bayes")
+
+from sklearn.naive_bayes import GaussianNB
+
+gnb = GaussianNB()
+gnb.fit(X.values,Y.values)
+
+check_consistency(gnb, validation,train)
 
 import sys
 exit(-1)
