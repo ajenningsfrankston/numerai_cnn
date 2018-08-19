@@ -14,9 +14,9 @@ from sklearn.model_selection import GroupKFold
 
 from keras.models import Sequential
 from keras.layers import Dense, BatchNormalization, Dropout, Activation
-from keras.wrappers.scikit_learn import KerasClassifier
-
+# from keras.wrappers.scikit_learn import KerasClassifier
 from check_consistency import check_consistency
+from mkeras_classifier import MKerasClassifier
 
 print("# Loading data...")
 # The training data is used to train your model how to predict the targets.
@@ -26,7 +26,8 @@ tournament = pd.read_csv('~/numerai_datasets/numerai_tournament_data.csv', heade
 
 # The tournament data contains validation data, test data and live data.
 # Validation is used to test your model locally so we separate that.
-validation = tournament[tournament['data_type']=='validation']
+
+validation = tournament[tournament['data_type'] == 'validation']
 
 # There are five targets in the training data which you can choose to model using the features.
 # Numerai does not say what the features mean but that's fine; we can still build a model.
@@ -52,32 +53,21 @@ from sklearn.linear_model import RidgeClassifier
 from sklearn.metrics import accuracy_score
 
 clf = RidgeClassifier(alpha=1.0)
+clf.fit(X.values, Y.values)
 
-clf.fit(X.values,Y.values)
-pred = clf.predict(X.values)
-accuracy = accuracy_score(pred,Y.values)
+check_consistency(clf, validation, train)
 
-pred2 = clf.predict(x_prediction)
-y2 = validation['target_bernie']
-accuracy = accuracy_score(pred2,y2)
 
-print(accuracy)
-
-check_consistency(clf, validation,train)
-
-# knn
+# Naive Bayes
 
 print("# Naive Bayes")
 
 from sklearn.naive_bayes import GaussianNB
 
 gnb = GaussianNB()
-gnb.fit(X.values,Y.values)
+gnb.fit(X.values, Y.values)
 
-check_consistency(gnb, validation,train)
-
-import sys
-exit(-1)
+check_consistency(gnb, validation, train)
 
 # set parameters:
 
@@ -100,8 +90,7 @@ def create_model(neurons=50, dropout=0.2):
     return model
 
 
-model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
-
+model = MKerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
 
 neurons = [32, 40]
 dropout = [0.1, 0.2]
@@ -110,24 +99,23 @@ param_grid = dict(neurons=neurons, dropout=dropout)
 gkf = GroupKFold(n_splits=5)
 kfold_split = gkf.split(X, Y, groups=train.era)
 
-grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=kfold_split, scoring='neg_log_loss',n_jobs=4, verbose=3)
+grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=kfold_split, scoring='neg_log_loss', n_jobs=4, verbose=3)
 grid_result = grid.fit(X.values, Y.values)
 
 print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
 
-
 # check consistency
 
-check_consistency(grid.best_estimator_.model, validation,train)
+check_consistency(grid.best_estimator_.model, validation, train)
 
 # create predictions
-from time import strftime,gmtime
+
 
 x_prediction = tournament[features]
 t_id = tournament["id"]
 y_prediction = grid.best_estimator_.model.predict_proba(x_prediction.values, batch_size=batch_size)
-results = np.reshape(y_prediction,-1)
-results_df = pd.DataFrame(data={'probability_bernie':results})
+results = np.reshape(y_prediction, -1)
+results_df = pd.DataFrame(data={'probability_bernie': results})
 joined = pd.DataFrame(t_id).join(results_df)
 
 filename = 'predictions.csv'
@@ -135,4 +123,4 @@ path = '~/numerai_predictions/' + filename
 print()
 print("Writing predictions to " + path.strip())
 # # Save the predictions out to a CSV file
-joined.to_csv(path,float_format='%.5f', index=False)
+joined.to_csv(path, float_format='%.5f', index=False)
