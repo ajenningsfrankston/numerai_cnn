@@ -14,9 +14,9 @@ from sklearn.model_selection import GroupKFold
 
 from keras.models import Sequential
 from keras.layers import Dense, BatchNormalization, Dropout, Activation
-# from keras.wrappers.scikit_learn import KerasClassifier
+from keras.wrappers.scikit_learn import KerasClassifier
 from check_consistency import check_consistency
-from mkeras_classifier import MKerasClassifier
+
 
 print("# Loading data...")
 # The training data is used to train your model how to predict the targets.
@@ -55,7 +55,7 @@ from sklearn.metrics import accuracy_score
 clf = RidgeClassifier(alpha=1.0)
 clf.fit(X.values, Y.values)
 
-check_consistency(clf, validation, train)
+#check_consistency(clf, validation, train)
 
 
 # Naive Bayes
@@ -67,7 +67,7 @@ from sklearn.naive_bayes import GaussianNB
 gnb = GaussianNB()
 gnb.fit(X.values, Y.values)
 
-check_consistency(gnb, validation, train)
+#check_consistency(gnb, validation, train)
 
 # set parameters:
 
@@ -90,7 +90,7 @@ def create_model(neurons=50, dropout=0.2):
     return model
 
 
-model = MKerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
+model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
 
 neurons = [32, 40]
 dropout = [0.1, 0.2]
