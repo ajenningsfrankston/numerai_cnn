@@ -16,6 +16,10 @@ from keras.models import Sequential
 from keras.layers import Dense, BatchNormalization, Dropout, Activation
 from keras.wrappers.scikit_learn import KerasClassifier
 from check_consistency import check_consistency
+from sklearn.naive_bayes import GaussianNB
+from sklearn.pipeline import  FeatureUnion,Pipeline
+from sklearn import linear_model
+
 
 
 print("# Loading data...")
@@ -53,29 +57,19 @@ from sklearn.linear_model import RidgeClassifier
 from sklearn.metrics import accuracy_score
 
 clf = RidgeClassifier(alpha=1.0)
-clf.fit(X.values, Y.values)
 
-#check_consistency(clf, validation, train)
-
-
-# Naive Bayes
 
 print("# Naive Bayes")
 
-from sklearn.naive_bayes import GaussianNB
+
 
 gnb = GaussianNB()
-gnb.fit(X.values, Y.values)
-
-#check_consistency(gnb, validation, train)
-
-# set parameters:
 
 batch_size = 256
 epochs = 8
 
 
-def create_model(neurons=50, dropout=0.2):
+def create_model(neurons=40, dropout=0.1):
     model = Sequential()
     # we add a vanilla hidden layer:
     model.add(Dense(neurons))
@@ -90,30 +84,32 @@ def create_model(neurons=50, dropout=0.2):
     return model
 
 
-model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
+keras_model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
 
-neurons = [32, 40]
-dropout = [0.1, 0.2]
-param_grid = dict(neurons=neurons, dropout=dropout)
 
-gkf = GroupKFold(n_splits=5)
-kfold_split = gkf.split(X, Y, groups=train.era)
+gdlm = linear_model.SGDClassifier(loss='log')
 
-grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=kfold_split, scoring='neg_log_loss', n_jobs=4, verbose=3)
-grid_result = grid.fit(X.values, Y.values)
+# combine classifiers using FeatureUnion, then pipeline
+# in parallel: Naive Bayes, Ridge and Keras
+# then feed to gradient descent linear model
+#
 
-print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
+combined = FeatureUnion[('RidgeClassifier', clf), ('gnb',gnb),('Keras',keras_model)]
+
+# create predictions
+
+piped_predictor = Pipeline ([('combined', combined), ('gdlm', gdlm)])
+
+piped_predictor.fit(X.values, Y.values)
 
 # check consistency
 
-check_consistency(grid.best_estimator_.model, validation, train)
-
-# create predictions
+check_consistency(piped_predictor.best_estimator_.model, validation, train)
 
 
 x_prediction = tournament[features]
 t_id = tournament["id"]
-y_prediction = grid.best_estimator_.model.predict_proba(x_prediction.values, batch_size=batch_size)
+y_prediction = piped_predictor.predict_proba(x_prediction.values, batch_size=batch_size)
 results = np.reshape(y_prediction, -1)
 results_df = pd.DataFrame(data={'probability_bernie': results})
 joined = pd.DataFrame(t_id).join(results_df)
