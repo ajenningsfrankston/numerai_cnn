@@ -12,8 +12,10 @@ def check_consistency(model,valid_data,train_data):
         features = [f for f in list(train_data) if "feature" in f]
         x_valid = current_valid_data[features]
         y_valid = current_valid_data["target_bernie"]
-        predn = model.predict(x_valid.values)
-        accuracy = accuracy_score(y_valid.values,predn)
+        prediction = model.predict_proba(x_valid.values)
+        prediction[prediction >= 0.5] = 1
+        prediction[prediction < 0.5] = 0
+        accuracy = accuracy_score(y_valid.values,prediction)
         if accuracy > 0.5 :
             consistent = True
             count_consistent += 1
