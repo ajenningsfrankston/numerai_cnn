@@ -16,9 +16,13 @@ from keras.models import Sequential
 from keras.layers import Dense, BatchNormalization, Dropout, Activation
 from keras.wrappers.scikit_learn import KerasClassifier
 from check_consistency import check_consistency
-from sklearn.naive_bayes import GaussianNB
 from sklearn.pipeline import  FeatureUnion,Pipeline
-from sklearn import linear_model
+from transformer import RidgeTransformer,GaussianNBTransformer
+from sklearn.decomposition import PCA
+
+from sys import exit
+
+
 
 
 
@@ -49,27 +53,23 @@ Y = train_bernie['target_bernie']
 x_prediction = validation[features]
 ids = tournament['id']
 
-# explore stacking
-
-print("# ridge regression ")
-
-from sklearn.linear_model import RidgeClassifier
-from sklearn.metrics import accuracy_score
-
-clf = RidgeClassifier(alpha=1.0)
 
 
-print("# Naive Bayes")
+ridge = RidgeTransformer()
 
+kpca = PCA(n_components=35,)
 
+gnb = GaussianNBTransformer()
 
-gnb = GaussianNB()
+exit()
+
+#keras parameters
 
 batch_size = 256
 epochs = 8
 
 
-def create_model(neurons=40, dropout=0.1):
+def create_model(neurons=10, dropout=0.1):
     model = Sequential()
     # we add a vanilla hidden layer:
     model.add(Dense(neurons))
@@ -87,24 +87,24 @@ def create_model(neurons=40, dropout=0.1):
 keras_model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
 
 
-gdlm = linear_model.SGDClassifier(loss='log')
+
 
 # combine classifiers using FeatureUnion, then pipeline
 # in parallel: Naive Bayes, Ridge and Keras
 # then feed to gradient descent linear model
 #
 
-combined = FeatureUnion[('RidgeClassifier', clf), ('gnb',gnb),('Keras',keras_model)]
+combined = FeatureUnion([('ridge', ridge), ('gnb',gnb),('kernelPCA',kpca)])
 
-# create predictions
+# pipe predictors
 
-piped_predictor = Pipeline ([('combined', combined), ('gdlm', gdlm)])
+piped_predictor = Pipeline ([('combined', combined), ('Keras',keras_model)])
 
 piped_predictor.fit(X.values, Y.values)
 
 # check consistency
 
-check_consistency(piped_predictor.best_estimator_.model, validation, train)
+check_consistency(piped_predictor.model, validation, train)
 
 
 x_prediction = tournament[features]
