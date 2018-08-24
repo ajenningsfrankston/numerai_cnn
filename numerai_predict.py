@@ -17,12 +17,7 @@ from keras.layers import Dense, BatchNormalization, Dropout, Activation
 from keras.wrappers.scikit_learn import KerasClassifier
 from check_consistency import check_consistency
 from sklearn.pipeline import  FeatureUnion,Pipeline
-from transformer import RidgeTransformer,GaussianNBTransformer
-from sklearn.decomposition import PCA
-
-from sys import exit
-
-
+from transformer import RidgeTransformer,GaussianNBTransformer,KNeighborsClassifierTransformer
 
 
 
@@ -53,11 +48,9 @@ Y = train_bernie['target_bernie']
 x_prediction = validation[features]
 ids = tournament['id']
 
-
-
 ridge = RidgeTransformer()
 
-kpca = PCA(n_components=35,)
+knn = KNeighborsClassifierTransformer
 
 gnb = GaussianNBTransformer()
 
@@ -87,14 +80,12 @@ def create_model(neurons=10, dropout=0.1):
 keras_model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
 
 
-
-
 # combine classifiers using FeatureUnion, then pipeline
 # in parallel: Naive Bayes, Ridge and Keras
 # then feed to gradient descent linear model
 #
 
-combined = FeatureUnion([('ridge', ridge), ('gnb',gnb),('kernelPCA',kpca)])
+combined = FeatureUnion([('ridge', ridge), ('gnb',gnb),('knn',knn)])
 
 # pipe predictors
 
