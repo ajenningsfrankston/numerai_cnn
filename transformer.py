@@ -20,5 +20,5 @@ class GaussianNBTransformer(GaussianNB, TransformerMixin):
 
 class KNeighborsClassifierTransformer(KNeighborsClassifier, TransformerMixin):
 
-        def transform(self, X, *_):
-            return self.predict(X)
+    def transform(self, X, *_):
+        return self.predict(X)

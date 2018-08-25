@@ -7,10 +7,7 @@
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import GroupKFold
 
 from keras.models import Sequential
 from keras.layers import Dense, BatchNormalization, Dropout, Activation
@@ -50,11 +47,9 @@ ids = tournament['id']
 
 ridge = RidgeTransformer()
 
-knn = KNeighborsClassifierTransformer
+knn = KNeighborsClassifierTransformer()
 
 gnb = GaussianNBTransformer()
-
-exit()
 
 #keras parameters
 
@@ -81,26 +76,36 @@ keras_model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=b
 
 
 # combine classifiers using FeatureUnion, then pipeline
-# in parallel: Naive Bayes, Ridge and Keras
-# then feed to gradient descent linear model
+# in parallel: Naive Bayes, Ridge and knn
+# then feed to Keras
 #
 
-combined = FeatureUnion([('ridge', ridge), ('gnb',gnb),('knn',knn)])
 
-# pipe predictors
+def make_model():
+    combined = FeatureUnion(transformer_list=[
+        ('ridge', ridge),
+        ('gnb', gnb),
+        ('knn', knn)])
 
-piped_predictor = Pipeline ([('combined', combined), ('Keras',keras_model)])
+    model = Pipeline(steps=[
+        ('combined', combined),
+        ('Keras', keras_model)])
 
-piped_predictor.fit(X.values, Y.values)
+    return model
+
+
+piped = make_model()
+
+piped.fit(X.values, Y.values)
 
 # check consistency
 
-check_consistency(piped_predictor.model, validation, train)
+check_consistency(piped.model, validation, train)
 
 
 x_prediction = tournament[features]
 t_id = tournament["id"]
-y_prediction = piped_predictor.predict_proba(x_prediction.values, batch_size=batch_size)
+y_prediction = piped.predict_proba(x_prediction.values, batch_size=batch_size)
 results = np.reshape(y_prediction, -1)
 results_df = pd.DataFrame(data={'probability_bernie': results})
 joined = pd.DataFrame(t_id).join(results_df)
