@@ -13,8 +13,12 @@ from keras.models import Sequential
 from keras.layers import Dense, BatchNormalization, Dropout, Activation
 from keras.wrappers.scikit_learn import KerasClassifier
 from check_consistency import check_consistency
-from sklearn.pipeline import  FeatureUnion,Pipeline
-from transformer import RidgeTransformer,GaussianNBTransformer,KNeighborsClassifierTransformer
+
+
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+
+from sklearn.ensemble import VotingClassifier
 
 
 
@@ -45,11 +49,10 @@ Y = train_bernie['target_bernie']
 x_prediction = validation[features]
 ids = tournament['id']
 
-ridge = RidgeTransformer()
 
-knn = KNeighborsClassifierTransformer()
+knn = KNeighborsClassifier()
+gnb = GaussianNB()
 
-gnb = GaussianNBTransformer()
 
 #keras parameters
 
@@ -72,40 +75,27 @@ def create_model(neurons=10, dropout=0.1):
     return model
 
 
-keras_model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=0)
+keras_model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=2)
 
 
-# combine classifiers using FeatureUnion, then pipeline
-# in parallel: Naive Bayes, Ridge and knn
-# then feed to Keras
-#
+# ensemble voting classifier
 
 
-def make_model():
-    combined = FeatureUnion(transformer_list=[
-        ('ridge', ridge),
-        ('gnb', gnb),
-        ('knn', knn)])
+voting = VotingClassifier(estimators=[
+    ('knn',knn),('gnb',gnb),('keras',keras_model)], voting='soft')
 
-    model = Pipeline(steps=[
-        ('combined', combined),
-        ('Keras', keras_model)])
+final_model = voting.fit(X.values,Y.values)
 
-    return model
-
-
-piped = make_model()
-
-piped.fit(X.values, Y.values)
 
 # check consistency
 
-check_consistency(piped.model, validation, train)
+check_consistency(final_model, validation, train)
 
 
 x_prediction = tournament[features]
 t_id = tournament["id"]
-y_prediction = piped.predict_proba(x_prediction.values, batch_size=batch_size)
+raw_predict = final_model.predict_proba(x_prediction.values)
+y_prediction = raw_predict[:,1]
 results = np.reshape(y_prediction, -1)
 results_df = pd.DataFrame(data={'probability_bernie': results})
 joined = pd.DataFrame(t_id).join(results_df)
