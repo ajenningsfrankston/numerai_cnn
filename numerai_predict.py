@@ -14,8 +14,7 @@ from keras.layers import Dense, BatchNormalization, Dropout, Activation
 from keras.wrappers.scikit_learn import KerasClassifier
 from check_consistency import check_consistency
 
-
-from sklearn.neighbors import KNeighborsClassifier
+from pridge_classifier import PRidgeClassifier
 from sklearn.naive_bayes import GaussianNB
 
 from sklearn.ensemble import VotingClassifier
@@ -50,7 +49,7 @@ x_prediction = validation[features]
 ids = tournament['id']
 
 
-knn = KNeighborsClassifier()
+rdc = PRidgeClassifier()
 gnb = GaussianNB()
 
 
@@ -82,7 +81,7 @@ keras_model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=b
 
 
 voting = VotingClassifier(estimators=[
-    ('knn',knn),('gnb',gnb),('keras',keras_model)], voting='soft')
+    ('rdc',rdc),('gnb',gnb),('keras',keras_model)], voting='soft')
 
 final_model = voting.fit(X.values,Y.values)
 
