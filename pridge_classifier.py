@@ -5,8 +5,10 @@ import numpy as np
 
 class PRidgeClassifier(RidgeClassifier):
 
-    def _predict_proba_(self, X):
+    def predict_proba(self, X):
 #
         d = self.decision_function(X)
         prob = np.exp(d)/(1+np.exp(d))
-        return prob
+        pdv = np.asarray(1-prob,prob)
+        print(pdv)
+        return pdv

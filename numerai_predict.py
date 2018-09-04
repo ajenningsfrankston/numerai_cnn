@@ -52,6 +52,14 @@ ids = tournament['id']
 rdc = PRidgeClassifier()
 gnb = GaussianNB()
 
+gp = gnb.fit(X.values,Y.values)
+check_consistency(gp,validation,train)
+
+rmod = rdc.fit(X.values,Y.values)
+check_consistency(rmod,validation,train)
+
+exit()
+
 
 #keras parameters
 
