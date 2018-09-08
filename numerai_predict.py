@@ -49,17 +49,8 @@ x_prediction = validation[features]
 ids = tournament['id']
 
 
-rdc = PRidgeClassifier()
+rdc = PRidgeClassifier(alpha=0.8)
 gnb = GaussianNB()
-
-gp = gnb.fit(X.values,Y.values)
-check_consistency(gp,validation,train)
-
-rmod = rdc.fit(X.values,Y.values)
-check_consistency(rmod,validation,train)
-
-exit()
-
 
 #keras parameters
 
@@ -67,7 +58,7 @@ batch_size = 256
 epochs = 8
 
 
-def create_model(neurons=10, dropout=0.1):
+def create_model(neurons=20, dropout=0.1):
     model = Sequential()
     # we add a vanilla hidden layer:
     model.add(Dense(neurons))

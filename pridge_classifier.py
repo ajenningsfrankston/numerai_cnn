@@ -9,6 +9,6 @@ class PRidgeClassifier(RidgeClassifier):
 #
         d = self.decision_function(X)
         prob = np.exp(d)/(1+np.exp(d))
-        pdv = np.asarray(1-prob,prob)
-        print(pdv)
+        pdv = np.array([1-prob, prob])
+        pdv = pdv.T
         return pdv
