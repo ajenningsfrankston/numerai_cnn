@@ -20,7 +20,6 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import VotingClassifier
 
 
-
 print("# Loading data...")
 # The training data is used to train your model how to predict the targets.
 train = pd.read_csv('~/numerai_datasets/numerai_training_data.csv', header=0)
@@ -52,7 +51,7 @@ ids = tournament['id']
 rdc = PRidgeClassifier(alpha=0.8)
 gnb = GaussianNB()
 
-#keras parameters
+# keras parameters
 
 batch_size = 256
 epochs = 8
@@ -83,7 +82,6 @@ voting = VotingClassifier(estimators=[
     ('rdc',rdc),('gnb',gnb),('keras',keras_model)], voting='soft')
 
 final_model = voting.fit(X.values,Y.values)
-
 
 # check consistency
 

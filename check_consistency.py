@@ -1,5 +1,8 @@
-import numpy as np
-from sklearn.metrics import accuracy_score
+
+from sklearn.metrics import log_loss
+
+
+BENCHMARK = 0.693
 
 
 def check_consistency(model,valid_data,train_data):
@@ -13,16 +16,11 @@ def check_consistency(model,valid_data,train_data):
         x_valid = current_valid_data[features]
         y_valid = current_valid_data["target_bernie"]
         raw_prediction = model.predict_proba(x_valid.values)
-        prediction = raw_prediction[:,1]
-        prediction[prediction >= 0.5] = 1
-        prediction[prediction < 0.5] = 0
-        accuracy = accuracy_score(y_valid.values,prediction)
-        if accuracy > 0.5 :
-            consistent = True
+        logloss = log_loss(y_valid.values,raw_prediction)
+        print(" log loss ",logloss)
+        if logloss < BENCHMARK:
             count_consistent += 1
-        else:
-            consistent = False
-        print("{}: accuracy - {} consistent: {}".format(era, accuracy, consistent))
-    print("Consistency: {}".format(count_consistent / count))
+        consistency = (count_consistent/count)*100
+    print("Consistency: {}".format(consistency))
 
 
