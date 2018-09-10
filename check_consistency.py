@@ -17,10 +17,9 @@ def check_consistency(model,valid_data,train_data):
         y_valid = current_valid_data["target_bernie"]
         raw_prediction = model.predict_proba(x_valid.values)
         logloss = log_loss(y_valid.values,raw_prediction)
-        print(" log loss ",logloss)
         if logloss < BENCHMARK:
             count_consistent += 1
         consistency = (count_consistent/count)*100
-    print("Consistency: {}".format(consistency))
+    return consistency
 
 

@@ -8,9 +8,8 @@
 import numpy as np
 import pandas as pd
 
-
 from keras.models import Sequential
-from keras.layers import Dense, BatchNormalization, Dropout, Activation
+from keras.layers import Dense, Dropout, Activation
 from keras.wrappers.scikit_learn import KerasClassifier
 from check_consistency import check_consistency
 
@@ -18,6 +17,12 @@ from pridge_classifier import PRidgeClassifier
 from sklearn.naive_bayes import GaussianNB
 
 from sklearn.ensemble import VotingClassifier
+
+from sklearn.model_selection import GroupKFold,GridSearchCV
+
+from weight_list import weight_list
+
+
 
 
 print("# Loading data...")
@@ -79,13 +84,28 @@ keras_model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=b
 
 
 voting = VotingClassifier(estimators=[
-    ('rdc',rdc),('gnb',gnb),('keras',keras_model)], voting='soft')
+    ('rdc',rdc),('gnb',gnb),('keras',keras_model)], voting='soft', weights=[1.0,1.0,1.0])
 
-final_model = voting.fit(X.values,Y.values)
+
+wlist=weight_list()
+
+gkf = GroupKFold(n_splits=5)
+kfold_split = gkf.split(X, Y, groups=train.era)
+
+grid = GridSearchCV(estimator=voting, param_grid=dict(weights=wlist), cv=kfold_split, scoring='neg_log_loss',n_jobs=1, verbose=3)
+grid_result = grid.fit(X.values, Y.values)
+
+print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
+means = grid_result.cv_results_['mean_test_score']
+stds = grid_result.cv_results_['std_test_score']
+params = grid_result.cv_results_['params']
+for mean, stdev, param in zip(means, stds, params):
+    print("%f (%f) with: %r" % (mean, stdev, param))
 
 # check consistency
-
-check_consistency(final_model, validation, train)
+final_model = grid.best_estimator_.model
+consistency = check_consistency(final_model, validation, train)
+print("Consistency: {}".format(consistency))
 
 
 x_prediction = tournament[features]
