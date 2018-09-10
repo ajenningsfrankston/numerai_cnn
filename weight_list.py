@@ -1,5 +1,10 @@
 from itertools import product
 
+#
+# generates the list of weight vectors
+# for searching
+#
+
 
 def weight_list():
     a = list(product([1, 2, 3], repeat=2))
