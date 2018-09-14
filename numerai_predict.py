@@ -14,15 +14,13 @@ from keras.wrappers.scikit_learn import KerasClassifier
 from check_consistency import check_consistency
 
 from pridge_classifier import PRidgeClassifier
-from sklearn.naive_bayes import GaussianNB
+from sklearn.linear_model import LogisticRegression
 
 from sklearn.ensemble import VotingClassifier
 
 from sklearn.model_selection import GroupKFold,GridSearchCV
 
 from weight_list import weight_list
-
-
 
 
 print("# Loading data...")
@@ -53,13 +51,23 @@ x_prediction = validation[features]
 ids = tournament['id']
 
 
-rdc = PRidgeClassifier(alpha=0.8)
-gnb = GaussianNB()
+rdc = PRidgeClassifier(alpha=1.0)
+lrc = LogisticRegression()
+
+rdc.fit(X.values,Y.values)
+lrc.fit(X.values,Y.values)
+
+print("Consistency: {}".format(check_consistency(rdc,validation,train)))
+
+print("Consistency: {}".format(check_consistency(lrc,validation,train)))
+
+
+
 
 # keras parameters
 
 batch_size = 256
-epochs = 8
+epochs = 16
 
 
 def create_model(neurons=20, dropout=0.1):
@@ -79,15 +87,26 @@ def create_model(neurons=20, dropout=0.1):
 
 keras_model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=2)
 
+keras_model.fit(X.values,Y.values)
+print("Consistency: {}".format(check_consistency(keras_model,validation,train)))
 
-# ensemble voting classifier
+model_list = [lrc,rdc,keras_model]
+
+consistencies = [ check_consistency(model,validation,train) for model in model_list]
+
+print("Consistencies: ",format(consistencies))
+
+exit()
+
+
+# bagging classifier
 
 
 voting = VotingClassifier(estimators=[
-    ('rdc',rdc),('gnb',gnb),('keras',keras_model)], voting='soft', weights=[1.0,1.0,1.0])
+    ('rdc',rdc),('lrc',lrc),('keras',keras_model)], voting='soft', weights=[1.0,1.0,1.0])
 
 
-wlist=weight_list()
+wlist = weight_list()
 
 gkf = GroupKFold(n_splits=5)
 kfold_split = gkf.split(X, Y, groups=train.era)
@@ -103,7 +122,7 @@ for mean, stdev, param in zip(means, stds, params):
     print("%f (%f) with: %r" % (mean, stdev, param))
 
 # check consistency
-final_model = grid.best_estimator_.model
+final_model = grid.best_estimator_.voting
 consistency = check_consistency(final_model, validation, train)
 print("Consistency: {}".format(consistency))
 

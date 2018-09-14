@@ -7,7 +7,7 @@ from itertools import product
 
 
 def weight_list():
-    a = list(product([1, 2, 3], repeat=2))
+    a = list(product([1, 2, 3, 4], repeat=2))
     b = []
     for x in a:
         b.append(list(x))
