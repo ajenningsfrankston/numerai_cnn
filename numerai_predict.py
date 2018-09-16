@@ -15,12 +15,7 @@ from check_consistency import check_consistency
 
 from pridge_classifier import PRidgeClassifier
 from sklearn.linear_model import LogisticRegression
-
-from sklearn.ensemble import VotingClassifier
-
-from sklearn.model_selection import GroupKFold,GridSearchCV
-
-from weight_list import weight_list
+from sklearn.ensemble import BaggingClassifier
 
 
 print("# Loading data...")
@@ -57,10 +52,6 @@ lrc = LogisticRegression()
 rdc.fit(X.values,Y.values)
 lrc.fit(X.values,Y.values)
 
-print("Consistency: {}".format(check_consistency(rdc,validation,train)))
-
-print("Consistency: {}".format(check_consistency(lrc,validation,train)))
-
 
 
 
@@ -88,41 +79,26 @@ def create_model(neurons=20, dropout=0.1):
 keras_model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size, verbose=2)
 
 keras_model.fit(X.values,Y.values)
-print("Consistency: {}".format(check_consistency(keras_model,validation,train)))
+
 
 model_list = [lrc,rdc,keras_model]
 
-consistencies = [ check_consistency(model,validation,train) for model in model_list]
+consistencies = [ check_consistency(model, validation, train) for model in model_list]
 
 print("Consistencies: ",format(consistencies))
 
-exit()
+most_consistent_model = model_list[consistencies.index(max(consistencies))]
 
 
 # bagging classifier
 
 
-voting = VotingClassifier(estimators=[
-    ('rdc',rdc),('lrc',lrc),('keras',keras_model)], voting='soft', weights=[1.0,1.0,1.0])
+model = BaggingClassifier(base_estimator=most_consistent_model, n_estimators=10)
+model.fit(X.values,Y.values)
 
-
-wlist = weight_list()
-
-gkf = GroupKFold(n_splits=5)
-kfold_split = gkf.split(X, Y, groups=train.era)
-
-grid = GridSearchCV(estimator=voting, param_grid=dict(weights=wlist), cv=kfold_split, scoring='neg_log_loss',n_jobs=1, verbose=3)
-grid_result = grid.fit(X.values, Y.values)
-
-print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
-means = grid_result.cv_results_['mean_test_score']
-stds = grid_result.cv_results_['std_test_score']
-params = grid_result.cv_results_['params']
-for mean, stdev, param in zip(means, stds, params):
-    print("%f (%f) with: %r" % (mean, stdev, param))
 
 # check consistency
-final_model = grid.best_estimator_.voting
+final_model = model
 consistency = check_consistency(final_model, validation, train)
 print("Consistency: {}".format(consistency))
 
